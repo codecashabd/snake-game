@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horror Snake - Escape the Darkness</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&display=swap');
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(139, 0, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 0, 139, 0.3) 0%, transparent 50%);
+            animation: pulseBackground 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulseBackground {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .fog {
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(100, 100, 100, 0.1) 0%, transparent 30%),
+                radial-gradient(circle at 70% 60%, rgba(80, 80, 80, 0.1) 0%, transparent 30%);
+            animation: fogMove 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes fogMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-50%, -50%); }
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(20, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #8B0000;
+            box-shadow: 
+                0 0 30px rgba(139, 0, 0, 0.5),
+                inset 0 0 30px rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 10;
+            animation: containerFlicker 3s infinite;
+        }
+
+        @keyframes containerFlicker {
+            0%, 100% { box-shadow: 0 0 30px rgba(139, 0, 0, 0.5), inset 0 0 30px rgba(0, 0, 0, 0.8); }
+            50% { box-shadow: 0 0 50px rgba(139, 0, 0, 0.8), inset 0 0 30px rgba(0, 0, 0, 0.8); }
+        }
+
+        h1 {
+            color: #8B0000;
+            margin-bottom: 10px;
+            font-size: 3em;
+            font-family: 'Creepster', cursive;
+            text-shadow: 
+                0 0 10px #ff0000,
+                0 0 20px #ff0000,
+                0 0 30px #ff0000,
+                2px 2px 5px #000;
+            animation: titleGlitch 2s infinite;
+        }
+
+        @keyframes titleGlitch {
+            0%, 90%, 100% { transform: translate(0, 0); }
+            92% { transform: translate(-2px, 2px); }
+            94% { transform: translate(2px, -2px); }
+            96% { transform: translate(-2px, -2px); }
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .score {
+            color: #8B0000;
+            font-size: 1.2em;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            font-weight: bold;
+            box-shadow: inset 0 0 10px rgba(139, 0, 0, 0.3);
+        }
+
+        .score span {
+            color: #ff4444;
+        }
+
+        canvas {
+            border: 3px solid #8B0000;
+            background-color: #0a0a0a;
+            border-radius: 5px;
+            box-shadow: 
+                0 0 20px rgba(139, 0, 0, 0.6),
+                inset 0 0 50px rgba(0, 0, 0, 0.9);
+            cursor: none;
+        }
+
+        .controls {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .warning {
+            color: #ff0000;
+            font-size: 0.9em;
+            margin-top: 10px;
+            animation: warningBlink 1.5s infinite;
+        }
+
+        @keyframes warningBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .game-over {
+            display: none;
+            color: #ff0000;
+            font-size: 2em;
+            margin-top: 20px;
+            font-family: 'Nosifer', cursive;
+            animation: gameOverShake 0.5s infinite;
+            text-shadow: 
+                0 0 10px #ff0000,
+                0 0 20px #ff0000;
+        }
+
+        @keyframes gameOverShake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-3px, 3px) rotate(-1deg); }
+            50% { transform: translate(3px, -3px) rotate(1deg); }
+            75% { transform: translate(-3px, -3px) rotate(-1deg); }
+        }
+
+        .message {
+            color: #ff4444;
+            font-size: 0.9em;
+            margin-top: 10px;
+            min-height: 20px;
+            animation: messageFade 2s infinite;
+        }
+
+        @keyframes messageFade {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 150px 50px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="fog"></div>
+    <div class="vignette"></div>
+    
+    <div class="game-container">
+        <h1>☠ HORROR SNAKE ☠</h1>
+        <div class="subtitle">Feed on souls... or become one</div>
+        <div class="score-board">
+            <div class="score">Souls: <span id="score">0</span></div>
+            <div class="score">Cursed Record: <span id="highScore">0</span></div>
+        </div>
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+        <div class="controls">
+            Arrow Keys to move • Space to pause • ESC to restart
+        </div>
+        <div class="warning">⚠ The darkness is watching... ⚠</div>
+        <div class="message" id="message"></div>
+        <div class="game-over" id="gameOver">
+            YOUR SOUL IS MINE
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('highScore');
+        const gameOverElement = document.getElementById('gameOver');
+        const messageElement = document.getElementById('message');
+
+        // Creepy messages
+        const messages = [
+            "Something is watching you...",
+            "The shadows are moving...",
+            "Can you hear the whispers?",
+            "You cannot escape...",
+            "The darkness hungers...",
+            "They are coming closer...",
+            "Your time is running out...",
+            "The souls are restless...",
+            "Do you feel the cold?",
+            "There is no way out..."
+        ];
+
+        // Game settings
+        const gridSize = 25;
+        const tileCount = canvas.width / gridSize;
+
+        // Game state
+        let snake = [{x: 10, y: 10}];
+        let velocityX = 0;
+        let velocityY = 0;
+        let foodX = 15;
+        let foodY = 15;
+        let score = 0;
+        let highScore = localStorage.getItem('horrorSnakeHighScore') || 0;
+        let gameRunning = true;
+        let gamePaused = false;
+        let gameSpeed = 120;
+        let ghostParticles = [];
+        let bloodParticles = [];
+        let darkness = 0;
+        let flashIntensity = 0;
+        let messageTimer = 0;
+
+        highScoreElement.textContent = highScore;
+
+        // Generate ghost particles
+        for (let i = 0; i < 30; i++) {
+            ghostParticles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                speedX: (Math.random() - 0.5) * 0.5,
+                speedY: (Math.random() - 0.5) * 0.5,
+                opacity: Math.random() * 0.3
+            });
+        }
+
+        // Generate random food position
+        function generateFood() {
+            foodX = Math.floor(Math.random() * tileCount);
+            foodY = Math.floor(Math.random() * tileCount);
+            
+            // Make sure food doesn't spawn on snake
+            for (let segment of snake) {
+                if (segment.x === foodX && segment.y === foodY) {
+                    generateFood();
+                    return;
+                }
+            }
+        }
+
+        // Create blood particles
+        function createBloodSplatter(x, y) {
+            for (let i = 0; i < 15; i++) {
+                bloodParticles.push({
+                    x: x * gridSize + gridSize / 2,
+                    y: y * gridSize + gridSize / 2,
+                    speedX: (Math.random() - 0.5) * 8,
+                    speedY: (Math.random() - 0.5) * 8,
+                    life: 30,
+                    size: Math.random() * 3 + 1
+                });
+            }
+        }
+
+        // Show random message
+        function showMessage() {
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            messageElement.textContent = msg;
+            messageTimer = 180; // Show for 3 seconds at 60fps
+        }
+
+        // Draw game
+        function draw() {
+            if (!gameRunning || gamePaused) {
+                ctx.fillStyle = `rgba(0, 0, 0, 0.3)`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            // Move snake
+            const head = {x: snake[0].x + velocityX, y: snake[0].y + velocityY};
+
+            // Check wall collision
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                gameOver();
+                return;
+            }
+
+            // Check self collision
+            for (let segment of snake) {
+                if (head.x === segment.x && head.y === segment.y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            snake.unshift(head);
+
+            // Check food collision
+            if (head.x === foodX && head.y === foodY) {
+                score++;
+                scoreElement.textContent = score;
+                
+                if (score > highScore) {
+                    highScore = score;
+                    highScoreElement.textContent = highScore;
+                    localStorage.setItem('horrorSnakeHighScore', highScore);
+                }
+                
+                createBloodSplatter(foodX, foodY);
+                flashIntensity = 0.5;
+                generateFood();
+                
+                if (Math.random() < 0.3) {
+                    showMessage();
+                }
+                
+                // Increase speed
+                if (gameSpeed > 60) {
+                    gameSpeed -= 3;
+                }
+                
+                // Increase darkness
+                darkness = Math.min(darkness + 0.02, 0.7);
+            } else {
+                snake.pop();
+            }
+
+            // Clear canvas with darkness
+            ctx.fillStyle = `rgba(10, 10, 10, ${0.8 + darkness})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw ghost particles
+            ghostParticles.forEach(particle => {
+                particle.x += particle.speedX;
+                particle.y += particle.speedY;
+                
+                if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1;
+                if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1;
+                
+                ctx.fillStyle = `rgba(100, 100, 150, ${particle.opacity})`;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw blood particles
+            bloodParticles = bloodParticles.filter(particle => {
+                particle.x += particle.speedX;
+                particle.y += particle.speedY;
+                particle.speedY += 0.3; // Gravity
+                particle.life--;
+                
+                if (particle.life > 0) {
+                    ctx.fillStyle = `rgba(139, 0, 0, ${particle.life / 30})`;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    return true;
+                }
+                return false;
+            });
+
+            // Draw grid faintly
+            ctx.strokeStyle = 'rgba(50, 0, 0, 0.2)';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= tileCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * gridSize, 0);
+                ctx.lineTo(i * gridSize, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * gridSize);
+                ctx.lineTo(canvas.width, i * gridSize);
+                ctx.stroke();
+            }
+
+            // Draw snake with horror effect
+            snake.forEach((segment, index) => {
+                const intensity = 1 - (index / snake.length) * 0.5;
+                
+                if (index === 0) {
+                    // Head with glowing red eyes
+                    ctx.fillStyle = `rgba(50, 139, 50, ${intensity})`;
+                    ctx.fillRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
+                    
+                    // Eyes
+                    ctx.fillStyle = '#ff0000';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#ff0000';
+                    ctx.fillRect(segment.x * gridSize + 6, segment.y * gridSize + 6, 4, 4);
+                    ctx.fillRect(segment.x * gridSize + 14, segment.y * gridSize + 6, 4, 4);
+                    ctx.shadowBlur = 0;
+                } else {
+                    // Body with decay effect
+                    ctx.fillStyle = `rgba(34, ${100 - index * 2}, 34, ${intensity})`;
+                    ctx.fillRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
+                    
+                    // Creepy texture
+                    if (Math.random() < 0.1) {
+                        ctx.fillStyle = 'rgba(139, 0, 0, 0.3)';
+                        ctx.fillRect(
+                            segment.x * gridSize + Math.random() * gridSize,
+                            segment.y * gridSize + Math.random() * gridSize,
+                            2, 2
+                        );
+                    }
+                }
+                
+                // Glow effect
+                ctx.strokeStyle = `rgba(50, 200, 50, ${0.3 * intensity})`;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
+            });
+
+            // Draw food (pulsating soul)
+            const pulse = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+            ctx.save();
+            ctx.translate(foodX * gridSize + gridSize / 2, foodY * gridSize + gridSize / 2);
+            
+            // Soul glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#8B0000';
+            
+            // Outer glow
+            ctx.fillStyle = `rgba(139, 0, 0, ${0.3 * pulse})`;
+            ctx.beginPath();
+            ctx.arc(0, 0, gridSize / 2 + 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner core
+            ctx.fillStyle = `rgba(255, 0, 0, ${pulse})`;
+            ctx.beginPath();
+            ctx.arc(0, 0, gridSize / 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Wispy effect
+            for (let i = 0; i < 3; i++) {
+                const angle = Date.now() * 0.002 + i * Math.PI * 2 / 3;
+                const distance = 8 + Math.sin(Date.now() * 0.003 + i) * 3;
+                ctx.fillStyle = `rgba(200, 0, 0, ${0.4 * pulse})`;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle) * distance, Math.sin(angle) * distance, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.restore();
+
+            // Flash effect when eating
+            if (flashIntensity > 0) {
+                ctx.fillStyle = `rgba(139, 0, 0, ${flashIntensity})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                flashIntensity -= 0.05;
+            }
+
+            // Update message timer
+            if (messageTimer > 0) {
+                messageTimer--;
+                if (messageTimer === 0) {
+                    messageElement.textContent = '';
+                }
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            gameOverElement.style.display = 'block';
+            
+            // Death flash
+            flashIntensity = 1;
+            
+            // Death splatter
+            createBloodSplatter(snake[0].x, snake[0].y);
+        }
+
+        function resetGame() {
+            snake = [{x: 10, y: 10}];
+            velocityX = 0;
+            velocityY = 0;
+            score = 0;
+            scoreElement.textContent = score;
+            gameSpeed = 120;
+            darkness = 0;
+            bloodParticles = [];
+            generateFood();
+            gameRunning = true;
+            gamePaused = false;
+            gameOverElement.style.display = 'none';
+            messageElement.textContent = '';
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameRunning) {
+                    gamePaused = !gamePaused;
+                }
+            }
+
+            if (e.code === 'Escape') {
+                e.preventDefault();
+                resetGame();
+            }
+
+            if (!gameRunning || gamePaused) return;
+
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (velocityY !== 1) {
+                        velocityX = 0;
+                        velocityY = -1;
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (velocityY !== -1) {
+                        velocityX = 0;
+                        velocityY = 1;
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (velocityX !== 1) {
+                        velocityX = -1;
+                        velocityY = 0;
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (velocityX !== -1) {
+                        velocityX = 1;
+                        velocityY = 0;
+                    }
+                    break;
+            }
+        });
+
+        // Game loop
+        function gameLoop() {
+            draw();
+            setTimeout(gameLoop, gameSpeed);
+        }
+
+        // Show initial message
+        setTimeout(() => showMessage(), 2000);
+
+        // Random messages during gameplay
+        setInterval(() => {
+            if (gameRunning && !gamePaused && Math.random() < 0.3) {
+                showMessage();
+            }
+        }, 8000);
+
+        // Start game
+        generateFood();
+        gameLoop();
+    </script>
+</body>
+</html>
