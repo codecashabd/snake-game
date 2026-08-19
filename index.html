@@ -3,373 +3,559 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Chess Game</title>
+    <title>DON'T TURN AROUND</title>
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        * {
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
         }
 
-        .game-container {
-            text-align: center;
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        body {
+            background: #000;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
         }
 
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
+        #cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 0, 0, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transition: transform 0.1s;
         }
 
-        .turn-indicator {
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        #chessboard {
-            display: grid;
-            grid-template-columns: repeat(8, 60px);
-            grid-template-rows: repeat(8, 60px);
-            border: 3px solid #333;
-            margin: 0 auto;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .square {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
             justify-content: center;
-            font-size: 40px;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        #startScreen {
+            background: #000;
+        }
+
+        #startScreen h1 {
+            font-size: 4em;
+            color: #8B0000;
+            text-shadow: 0 0 20px #ff0000;
+            animation: flicker 3s infinite;
+            margin-bottom: 30px;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+            93% { opacity: 0.2; }
+            95% { opacity: 1; }
+        }
+
+        .btn {
+            background: #1a0000;
+            color: #8B0000;
+            border: 2px solid #8B0000;
+            padding: 20px 50px;
+            font-size: 1.5em;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
         }
 
-        .square.light {
-            background-color: #f0d9b5;
+        .btn:hover {
+            background: #8B0000;
+            color: #000;
+            box-shadow: 0 0 30px #8B0000;
         }
 
-        .square.dark {
-            background-color: #b58863;
-        }
-
-        .square.selected {
-            background-color: #7fc97f !important;
-        }
-
-        .square.valid-move {
-            background-color: #a8d5a8 !important;
-        }
-
-        .square:hover {
-            opacity: 0.8;
-        }
-
-        .controls {
+        #warning {
+            color: #666;
             margin-top: 20px;
+            font-size: 0.8em;
+            animation: pulse 2s infinite;
         }
 
-        button {
-            background-color: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
         }
 
-        button:hover {
-            background-color: #5568d3;
+        #gameScreen {
+            background: #0a0a0a;
+            position: relative;
         }
 
-        .message {
-            margin-top: 15px;
-            font-size: 16px;
-            color: #e74c3c;
-            font-weight: bold;
-            min-height: 25px;
+        #corridor {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            perspective: 1000px;
+            background: 
+                radial-gradient(ellipse at center, #1a1a1a 0%, #000 70%),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 50px,
+                    rgba(50, 50, 50, 0.1) 50px,
+                    rgba(50, 50, 50, 0.1) 100px
+                );
+        }
+
+        #staticNoise {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.5"/></svg>');
+            animation: static 0.1s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes static {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-2%, 2%); }
+            40% { transform: translate(-2%, -2%); }
+            60% { transform: translate(2%, -2%); }
+            80% { transform: translate(2%, 2%); }
+            100% { transform: translate(0, 0); }
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #8B0000;
+            font-size: 2em;
+            text-align: center;
+            text-shadow: 0 0 10px #ff0000;
+            animation: messageGlow 2s infinite;
+            z-index: 100;
+        }
+
+        @keyframes messageGlow {
+            0%, 100% { opacity: 0.7; text-shadow: 0 0 10px #ff0000; }
+            50% { opacity: 1; text-shadow: 0 0 30px #ff0000; }
+        }
+
+        #counter {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8B0000;
+            font-size: 3em;
+            text-shadow: 0 0 20px #ff0000;
+            z-index: 100;
+        }
+
+        .ghost {
+            position: absolute;
+            font-size: 8em;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            text-shadow: 0 0 50px #000;
+        }
+
+        #jumpscare {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            z-index: 1000;
+        }
+
+        #jumpscare.active {
+            display: flex;
+            animation: scareShake 0.1s infinite;
+        }
+
+        @keyframes scareShake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-10px, 10px) rotate(-2deg); }
+            50% { transform: translate(10px, -10px) rotate(2deg); }
+            75% { transform: translate(-10px, -10px) rotate(-1deg); }
+        }
+
+        #jumpscare img {
+            font-size: 20em;
+            animation: scareZoom 0.5s;
+        }
+
+        @keyframes scareZoom {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .eyes {
+            position: absolute;
+            display: flex;
+            gap: 40px;
+            opacity: 0;
+            animation: eyesFade 3s ease-in-out;
+        }
+
+        @keyframes eyesFade {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.8; }
+        }
+
+        .eye {
+            width: 30px;
+            height: 30px;
+            background: #ff0000;
+            border-radius: 50%;
+            box-shadow: 0 0 40px #ff0000;
+        }
+
+        #shadow {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 0;
+            background: linear-gradient(to top, #000, transparent);
+            transition: height 2s;
+        }
+
+        .whisper {
+            position: absolute;
+            color: rgba(139, 0, 0, 0.5);
+            font-size: 1.2em;
+            opacity: 0;
+            animation: whisperFloat 4s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes whisperFloat {
+            0% { opacity: 0; transform: translateY(0); }
+            50% { opacity: 0.6; }
+            100% { opacity: 0; transform: translateY(-100px); }
+        }
+
+        #heartbeat {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(139, 0, 0, 0);
+            pointer-events: none;
+            animation: heartbeatPulse 2s infinite;
+        }
+
+        @keyframes heartbeatPulse {
+            0%, 100% { background: rgba(139, 0, 0, 0); }
+            10% { background: rgba(139, 0, 0, 0.1); }
+            20% { background: rgba(139, 0, 0, 0); }
+            30% { background: rgba(139, 0, 0, 0.15); }
+            40% { background: rgba(139, 0, 0, 0); }
+        }
+
+        .glitch {
+            animation: glitchEffect 5s infinite;
+        }
+
+        @keyframes glitchEffect {
+            0%, 98% { transform: translate(0); }
+            98.5% { transform: translate(-10px, 5px); clip-path: inset(0 0 50% 0); }
+            99% { transform: translate(10px, -5px); clip-path: inset(50% 0 0 0); }
+            99.5% { transform: translate(0); clip-path: none; }
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>♔ Chess Game ♚</h1>
-        <div class="turn-indicator" id="turnIndicator">White's Turn</div>
-        <div id="chessboard"></div>
-        <div class="controls">
-            <button onclick="resetGame()">New Game</button>
+    <div id="cursor"></div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="screen active">
+        <h1>DON'T TURN AROUND</h1>
+        <button class="btn" onclick="startGame()">ENTER</button>
+        <div id="warning">⚠️ Warning: Contains jump scares and disturbing content ⚠️</div>
+        <div id="warning" style="margin-top: 10px;">🔊 Use headphones for best experience 🔊</div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div id="corridor">
+            <div id="staticNoise"></div>
+            <div id="heartbeat"></div>
+            <div id="shadow"></div>
+            <div id="counter">60</div>
+            <div id="message">Find the exit...<br><span style="font-size: 0.5em;">Click anywhere to survive</span></div>
         </div>
-        <div class="message" id="message"></div>
+        <div id="jumpscare"></div>
     </div>
 
     <script>
-        const board = document.getElementById('chessboard');
-        const turnIndicator = document.getElementById('turnIndicator');
-        const messageElement = document.getElementById('message');
+        const cursor = document.getElementById('cursor');
+        const corridor = document.getElementById('corridor');
+        const message = document.getElementById('message');
+        const counter = document.getElementById('counter');
+        const jumpscare = document.getElementById('jumpscare');
+        const shadow = document.getElementById('shadow');
+        const heartbeat = document.getElementById('heartbeat');
 
-        let currentTurn = 'white';
-        let selectedSquare = null;
-        let gameBoard = [];
+        let gameActive = false;
+        let timeLeft = 60;
+        let clicks = 0;
+        let clicksNeeded = 50;
+        let scareTimer;
+        let whisperTimer;
+        let ghostTimer;
 
-        // Unicode chess pieces
-        const pieces = {
-            white: {
-                king: '♔',
-                queen: '♕',
-                rook: '♖',
-                bishop: '♗',
-                knight: '♘',
-                pawn: '♙'
-            },
-            black: {
-                king: '♚',
-                queen: '♛',
-                rook: '♜',
-                bishop: '♝',
-                knight: '♞',
-                pawn: '♟'
-            }
-        };
+        const scaryMessages = [
+            "I can see you...",
+            "Don't look behind you...",
+            "It's getting closer...",
+            "You can't escape...",
+            "I'm right behind you...",
+            "Why are you running?",
+            "You're not alone...",
+            "Can you hear the footsteps?",
+            "It's watching you...",
+            "Turn around...",
+            "The exit doesn't exist...",
+            "You shouldn't have come here..."
+        ];
 
-        // Initialize board
-        function initBoard() {
-            gameBoard = [
-                ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
-                ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
-                ['', '', '', '', '', '', '', ''],
-                ['', '', '', '', '', '', '', ''],
-                ['', '', '', '', '', '', '', ''],
-                ['', '', '', '', '', '', '', ''],
-                ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
-                ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
-            ];
-        }
+        const whispers = [
+            "help me...",
+            "run...",
+            "it's here...",
+            "behind you...",
+            "leave...",
+            "too late..."
+        ];
 
-        // Get piece color
-        function getPieceColor(piece) {
-            if (!piece) return null;
-            const whitePieces = Object.values(pieces.white);
-            return whitePieces.includes(piece) ? 'white' : 'black';
-        }
+        // Custom cursor follow
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
 
-        // Get piece type
-        function getPieceType(piece) {
-            for (let color in pieces) {
-                for (let type in pieces[color]) {
-                    if (pieces[color][type] === piece) {
-                        return type;
-                    }
-                }
-            }
-            return null;
-        }
-
-        // Check if move is valid
-        function isValidMove(fromRow, fromCol, toRow, toCol) {
-            const piece = gameBoard[fromRow][fromCol];
-            const targetPiece = gameBoard[toRow][toCol];
-            const pieceColor = getPieceColor(piece);
-            const targetColor = getPieceColor(targetPiece);
-            const pieceType = getPieceType(piece);
-
-            // Can't capture own piece
-            if (targetColor === pieceColor) return false;
-
-            const rowDiff = Math.abs(toRow - fromRow);
-            const colDiff = Math.abs(toCol - fromCol);
-
-            switch(pieceType) {
-                case 'pawn':
-                    const direction = pieceColor === 'white' ? -1 : 1;
-                    const startRow = pieceColor === 'white' ? 6 : 1;
-                    
-                    // Move forward
-                    if (fromCol === toCol && !targetPiece) {
-                        if (toRow === fromRow + direction) return true;
-                        if (fromRow === startRow && toRow === fromRow + 2 * direction && !gameBoard[fromRow + direction][fromCol]) return true;
-                    }
-                    // Capture diagonally
-                    if (colDiff === 1 && toRow === fromRow + direction && targetPiece) return true;
-                    return false;
-
-                case 'rook':
-                    if (fromRow === toRow || fromCol === toCol) {
-                        return isPathClear(fromRow, fromCol, toRow, toCol);
-                    }
-                    return false;
-
-                case 'knight':
-                    return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
-
-                case 'bishop':
-                    if (rowDiff === colDiff) {
-                        return isPathClear(fromRow, fromCol, toRow, toCol);
-                    }
-                    return false;
-
-                case 'queen':
-                    if (fromRow === toRow || fromCol === toCol || rowDiff === colDiff) {
-                        return isPathClear(fromRow, fromCol, toRow, toCol);
-                    }
-                    return false;
-
-                case 'king':
-                    return rowDiff <= 1 && colDiff <= 1;
-
-                default:
-                    return false;
-            }
-        }
-
-        // Check if path is clear (for rook, bishop, queen)
-        function isPathClear(fromRow, fromCol, toRow, toCol) {
-            const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
-            const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
+        function startGame() {
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+            gameActive = true;
             
-            let currentRow = fromRow + rowStep;
-            let currentCol = fromCol + colStep;
-
-            while (currentRow !== toRow || currentCol !== toCol) {
-                if (gameBoard[currentRow][currentCol]) return false;
-                currentRow += rowStep;
-                currentCol += colStep;
-            }
-            return true;
+            startTimer();
+            startScareEvents();
+            startWhispers();
+            spawnGhosts();
+            increaseDarkness();
         }
 
-        // Get all valid moves for selected piece
-        function getValidMoves(row, col) {
-            const validMoves = [];
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    if (isValidMove(row, col, r, c)) {
-                        validMoves.push({row: r, col: c});
-                    }
-                }
-            }
-            return validMoves;
-        }
-
-        // Render board
-        function renderBoard() {
-            board.innerHTML = '';
-            
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const square = document.createElement('div');
-                    square.className = 'square';
-                    square.className += (row + col) % 2 === 0 ? ' light' : ' dark';
-                    square.textContent = gameBoard[row][col];
-                    square.dataset.row = row;
-                    square.dataset.col = col;
-                    
-                    square.addEventListener('click', handleSquareClick);
-                    
-                    board.appendChild(square);
-                }
-            }
-        }
-
-        // Handle square click
-        function handleSquareClick(e) {
-            const row = parseInt(e.target.dataset.row);
-            const col = parseInt(e.target.dataset.col);
-            const clickedPiece = gameBoard[row][col];
-            const pieceColor = getPieceColor(clickedPiece);
-
-            // If no piece is selected
-            if (!selectedSquare) {
-                if (clickedPiece && pieceColor === currentTurn) {
-                    selectedSquare = {row, col};
-                    highlightSquare(row, col);
-                    highlightValidMoves(row, col);
-                    messageElement.textContent = '';
-                }
-            } else {
-                // If same square clicked, deselect
-                if (selectedSquare.row === row && selectedSquare.col === col) {
-                    selectedSquare = null;
-                    renderBoard();
+        function startTimer() {
+            const timerInterval = setInterval(() => {
+                if (!gameActive) {
+                    clearInterval(timerInterval);
                     return;
                 }
-
-                // Try to move
-                if (isValidMove(selectedSquare.row, selectedSquare.col, row, col)) {
-                    // Make the move
-                    const capturedPiece = gameBoard[row][col];
-                    gameBoard[row][col] = gameBoard[selectedSquare.row][selectedSquare.col];
-                    gameBoard[selectedSquare.row][selectedSquare.col] = '';
-                    
-                    // Check if king was captured
-                    if (capturedPiece === '♔' || capturedPiece === '♚') {
-                        messageElement.textContent = `${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} wins!`;
-                        renderBoard();
-                        return;
-                    }
-
-                    // Switch turn
-                    currentTurn = currentTurn === 'white' ? 'black' : 'white';
-                    turnIndicator.textContent = `${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}'s Turn`;
-                    selectedSquare = null;
-                    renderBoard();
-                } else {
-                    // Invalid move, try selecting new piece
-                    if (clickedPiece && pieceColor === currentTurn) {
-                        selectedSquare = {row, col};
-                        renderBoard();
-                        highlightSquare(row, col);
-                        highlightValidMoves(row, col);
-                    } else {
-                        messageElement.textContent = 'Invalid move!';
-                        setTimeout(() => messageElement.textContent = '', 2000);
-                    }
+                
+                timeLeft--;
+                counter.textContent = timeLeft;
+                
+                if (timeLeft <= 10) {
+                    counter.style.animation = 'scareShake 0.2s infinite';
+                    heartbeat.style.animationDuration = '0.8s';
                 }
-            }
+                
+                if (timeLeft <= 0) {
+                    triggerJumpscare('☠️', 'TIME IS UP...');
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
         }
 
-        // Highlight selected square
-        function highlightSquare(row, col) {
-            const squares = document.querySelectorAll('.square');
-            const index = row * 8 + col;
-            squares[index].classList.add('selected');
+        function startScareEvents() {
+            scareTimer = setInterval(() => {
+                if (!gameActive) return;
+                
+                const randomMessage = scaryMessages[Math.floor(Math.random() * scaryMessages.length)];
+                message.textContent = randomMessage;
+                message.style.fontSize = Math.random() * 2 + 1.5 + 'em';
+                
+                // Random screen glitch
+                if (Math.random() < 0.3) {
+                    corridor.classList.add('glitch');
+                    setTimeout(() => corridor.classList.remove('glitch'), 200);
+                }
+                
+                // Random eye appearance
+                if (Math.random() < 0.2) {
+                    showEyes();
+                }
+            }, 3000);
         }
 
-        // Highlight valid moves
-        function highlightValidMoves(row, col) {
-            const validMoves = getValidMoves(row, col);
-            const squares = document.querySelectorAll('.square');
+        function startWhispers() {
+            whisperTimer = setInterval(() => {
+                if (!gameActive) return;
+                
+                const whisper = document.createElement('div');
+                whisper.className = 'whisper';
+                whisper.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+                whisper.style.left = Math.random() * 80 + 10 + '%';
+                whisper.style.top = Math.random() * 80 + 10 + '%';
+                corridor.appendChild(whisper);
+                
+                setTimeout(() => whisper.remove(), 4000);
+            }, 5000);
+        }
+
+        function spawnGhosts() {
+            ghostTimer = setInterval(() => {
+                if (!gameActive) return;
+                
+                const ghost = document.createElement('div');
+                ghost.className = 'ghost';
+                ghost.textContent = ['👻', '💀', '☠️', '👹'][Math.floor(Math.random() * 4)];
+                ghost.style.left = Math.random() * 80 + 10 + '%';
+                ghost.style.top = Math.random() * 80 + 10 + '%';
+                corridor.appendChild(ghost);
+                
+                setTimeout(() => {
+                    ghost.style.opacity = '0.7';
+                    setTimeout(() => {
+                        ghost.style.opacity = '0';
+                        setTimeout(() => ghost.remove(), 300);
+                    }, 500);
+                }, 100);
+                
+                // Random jump scare chance
+                if (Math.random() < 0.15 && clicks < clicksNeeded / 2) {
+                    setTimeout(() => {
+                        if (gameActive) {
+                            triggerJumpscare('👹', 'I FOUND YOU!!!');
+                        }
+                    }, 2000);
+                }
+            }, 4000);
+        }
+
+        function showEyes() {
+            const eyes = document.createElement('div');
+            eyes.className = 'eyes';
+            eyes.innerHTML = '<div class="eye"></div><div class="eye"></div>';
+            eyes.style.left = Math.random() * 70 + 15 + '%';
+            eyes.style.top = Math.random() * 50 + 10 + '%';
+            corridor.appendChild(eyes);
             
-            validMoves.forEach(move => {
-                const index = move.row * 8 + move.col;
-                squares[index].classList.add('valid-move');
-            });
+            setTimeout(() => eyes.remove(), 3000);
         }
 
-        // Reset game
-        function resetGame() {
-            currentTurn = 'white';
-            selectedSquare = null;
-            messageElement.textContent = '';
-            turnIndicator.textContent = "White's Turn";
-            initBoard();
-            renderBoard();
+        function increaseDarkness() {
+            let darkness = 0;
+            setInterval(() => {
+                if (!gameActive) return;
+                darkness += 5;
+                shadow.style.height = Math.min(darkness, 80) + '%';
+            }, 5000);
         }
 
-        // Initialize game
-        initBoard();
-        renderBoard();
+        corridor.addEventListener('click', (e) => {
+            if (!gameActive) return;
+            
+            clicks++;
+            
+            // Create click effect
+            const ripple = document.createElement('div');
+            ripple.style.position = 'absolute';
+            ripple.style.left = e.clientX + 'px';
+            ripple.style.top = e.clientY + 'px';
+            ripple.style.width = '20px';
+            ripple.style.height = '20px';
+            ripple.style.background = '#8B0000';
+            ripple.style.borderRadius = '50%';
+            ripple.style.transform = 'translate(-50%, -50%)';
+            ripple.style.pointerEvents = 'none';
+            ripple.style.animation = 'pulse 0.5s forwards';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 500);
+            
+            message.textContent = `Keep clicking... ${clicks}/${clicksNeeded}`;
+            
+            // Tension increase
+            if (clicks > 20 && clicks < 30) {
+                message.textContent = "IT'S GETTING CLOSER...";
+            }
+            
+            if (clicks > 35 && clicks < 45) {
+                message.textContent = "YOU CAN'T ESCAPE!!!";
+                corridor.style.animation = 'scareShake 0.5s';
+                setTimeout(() => corridor.style.animation = '', 500);
+            }
+            
+            if (clicks >= clicksNeeded) {
+                winGame();
+            }
+        });
+
+        function triggerJumpscare(emoji, text) {
+            gameActive = false;
+            jumpscare.classList.add('active');
+            jumpscare.innerHTML = `<div style="font-size: 20em;">${emoji}</div>`;
+            jumpscare.style.background = '#000';
+            
+            // Create scream text
+            setTimeout(() => {
+                const scream = document.createElement('div');
+                scream.style.position = 'absolute';
+                scream.style.fontSize = '5em';
+                scream.style.color = '#ff0000';
+                scream.style.textShadow = '0 0 50px #ff0000';
+                scream.style.animation = 'scareShake 0.1s infinite';
+                scream.textContent = text;
+                jumpscare.appendChild(scream);
+            }, 500);
+            
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        }
+
+        function winGame() {
+            gameActive = false;
+            clearInterval(scareTimer);
+            clearInterval(whisperTimer);
+            clearInterval(ghostTimer);
+            
+            message.innerHTML = `
+                <div style="font-size: 2em; color: #00ff00; text-shadow: 0 0 20px #00ff00;">
+                    YOU ESCAPED...<br>
+                    <span style="font-size: 0.3em; color: #8B0000; margin-top: 20px;">
+                        ...or did you?
+                    </span>
+                </div>
+            `;
+            
+            // Fake ending - jump scare after "winning"
+            setTimeout(() => {
+                triggerJumpscare('😈', 'YOU THOUGHT YOU WON?!');
+            }, 2000);
+        }
+
+        // Random screen shake
+        setInterval(() => {
+            if (gameActive && Math.random() < 0.1) {
+                document.body.style.animation = 'scareShake 0.2s';
+                setTimeout(() => document.body.style.animation = '', 200);
+            }
+        }, 5000);
     </script>
 </body>
 </html>
