@@ -3,559 +3,543 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DON'T TURN AROUND</title>
+    <title>Snooker Game</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            cursor: none;
         }
 
         body {
-            background: #000;
-            font-family: 'Courier New', monospace;
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        #cursor {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 0, 0, 0.5);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10000;
-            transition: transform 0.1s;
-        }
-
-        .screen {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: none;
+            display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: Arial, sans-serif;
         }
 
-        .screen.active {
-            display: flex;
-        }
-
-        #startScreen {
-            background: #000;
-        }
-
-        #startScreen h1 {
-            font-size: 4em;
-            color: #8B0000;
-            text-shadow: 0 0 20px #ff0000;
-            animation: flicker 3s infinite;
-            margin-bottom: 30px;
-        }
-
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-            93% { opacity: 0.2; }
-            95% { opacity: 1; }
-        }
-
-        .btn {
-            background: #1a0000;
-            color: #8B0000;
-            border: 2px solid #8B0000;
-            padding: 20px 50px;
-            font-size: 1.5em;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Courier New', monospace;
-        }
-
-        .btn:hover {
-            background: #8B0000;
-            color: #000;
-            box-shadow: 0 0 30px #8B0000;
-        }
-
-        #warning {
-            color: #666;
-            margin-top: 20px;
-            font-size: 0.8em;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        #gameScreen {
-            background: #0a0a0a;
-            position: relative;
-        }
-
-        #corridor {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            perspective: 1000px;
-            background: 
-                radial-gradient(ellipse at center, #1a1a1a 0%, #000 70%),
-                repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 50px,
-                    rgba(50, 50, 50, 0.1) 50px,
-                    rgba(50, 50, 50, 0.1) 100px
-                );
-        }
-
-        #staticNoise {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            opacity: 0.03;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.5"/></svg>');
-            animation: static 0.1s infinite;
-            pointer-events: none;
-        }
-
-        @keyframes static {
-            0% { transform: translate(0, 0); }
-            20% { transform: translate(-2%, 2%); }
-            40% { transform: translate(-2%, -2%); }
-            60% { transform: translate(2%, -2%); }
-            80% { transform: translate(2%, 2%); }
-            100% { transform: translate(0, 0); }
-        }
-
-        #message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #8B0000;
-            font-size: 2em;
+        .game-container {
             text-align: center;
-            text-shadow: 0 0 10px #ff0000;
-            animation: messageGlow 2s infinite;
-            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
         }
 
-        @keyframes messageGlow {
-            0%, 100% { opacity: 0.7; text-shadow: 0 0 10px #ff0000; }
-            50% { opacity: 1; text-shadow: 0 0 30px #ff0000; }
+        h1 {
+            color: white;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
-        #counter {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #8B0000;
-            font-size: 3em;
-            text-shadow: 0 0 20px #ff0000;
-            z-index: 100;
-        }
-
-        .ghost {
-            position: absolute;
-            font-size: 8em;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            text-shadow: 0 0 50px #000;
-        }
-
-        #jumpscare {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            background: #000;
-            z-index: 1000;
-        }
-
-        #jumpscare.active {
+        .info-bar {
             display: flex;
-            animation: scareShake 0.1s infinite;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            color: white;
+            font-size: 18px;
+            gap: 20px;
         }
 
-        @keyframes scareShake {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            25% { transform: translate(-10px, 10px) rotate(-2deg); }
-            50% { transform: translate(10px, -10px) rotate(2deg); }
-            75% { transform: translate(-10px, -10px) rotate(-1deg); }
+        .info-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
         }
 
-        #jumpscare img {
-            font-size: 20em;
-            animation: scareZoom 0.5s;
+        #gameCanvas {
+            border: 8px solid #8B4513;
+            background: linear-gradient(to bottom, #0B6623 0%, #0a5a1f 100%);
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.5),
+                inset 0 0 50px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            cursor: crosshair;
         }
 
-        @keyframes scareZoom {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
+        .controls {
+            margin-top: 15px;
+            color: white;
+            font-size: 14px;
         }
 
-        .eyes {
-            position: absolute;
-            display: flex;
-            gap: 40px;
-            opacity: 0;
-            animation: eyesFade 3s ease-in-out;
+        .power-bar-container {
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
         }
 
-        @keyframes eyesFade {
-            0%, 100% { opacity: 0; }
-            50% { opacity: 0.8; }
+        .power-bar {
+            width: 300px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.4);
         }
 
-        .eye {
-            width: 30px;
-            height: 30px;
-            background: #ff0000;
-            border-radius: 50%;
-            box-shadow: 0 0 40px #ff0000;
-        }
-
-        #shadow {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 0;
-            background: linear-gradient(to top, #000, transparent);
-            transition: height 2s;
-        }
-
-        .whisper {
-            position: absolute;
-            color: rgba(139, 0, 0, 0.5);
-            font-size: 1.2em;
-            opacity: 0;
-            animation: whisperFloat 4s forwards;
-            pointer-events: none;
-        }
-
-        @keyframes whisperFloat {
-            0% { opacity: 0; transform: translateY(0); }
-            50% { opacity: 0.6; }
-            100% { opacity: 0; transform: translateY(-100px); }
-        }
-
-        #heartbeat {
-            position: absolute;
-            width: 100%;
+        .power-fill {
             height: 100%;
-            background: rgba(139, 0, 0, 0);
-            pointer-events: none;
-            animation: heartbeatPulse 2s infinite;
+            background: linear-gradient(to right, #4ade80, #fbbf24, #ef4444);
+            width: 0%;
+            transition: width 0.05s;
         }
 
-        @keyframes heartbeatPulse {
-            0%, 100% { background: rgba(139, 0, 0, 0); }
-            10% { background: rgba(139, 0, 0, 0.1); }
-            20% { background: rgba(139, 0, 0, 0); }
-            30% { background: rgba(139, 0, 0, 0.15); }
-            40% { background: rgba(139, 0, 0, 0); }
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 25px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
         }
 
-        .glitch {
-            animation: glitchEffect 5s infinite;
+        button:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
         }
 
-        @keyframes glitchEffect {
-            0%, 98% { transform: translate(0); }
-            98.5% { transform: translate(-10px, 5px); clip-path: inset(0 0 50% 0); }
-            99% { transform: translate(10px, -5px); clip-path: inset(50% 0 0 0); }
-            99.5% { transform: translate(0); clip-path: none; }
+        .message {
+            color: #fbbf24;
+            font-size: 18px;
+            margin-top: 10px;
+            min-height: 25px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
 <body>
-    <div id="cursor"></div>
-
-    <!-- Start Screen -->
-    <div id="startScreen" class="screen active">
-        <h1>DON'T TURN AROUND</h1>
-        <button class="btn" onclick="startGame()">ENTER</button>
-        <div id="warning">⚠️ Warning: Contains jump scares and disturbing content ⚠️</div>
-        <div id="warning" style="margin-top: 10px;">🔊 Use headphones for best experience 🔊</div>
-    </div>
-
-    <!-- Game Screen -->
-    <div id="gameScreen" class="screen">
-        <div id="corridor">
-            <div id="staticNoise"></div>
-            <div id="heartbeat"></div>
-            <div id="shadow"></div>
-            <div id="counter">60</div>
-            <div id="message">Find the exit...<br><span style="font-size: 0.5em;">Click anywhere to survive</span></div>
+    <div class="game-container">
+        <h1>🎱 Snooker Game 🎱</h1>
+        <div class="info-bar">
+            <div class="info-item">Player: <span id="player">1</span></div>
+            <div class="info-item">Score: <span id="score">0</span></div>
+            <div class="info-item">Balls Left: <span id="ballsLeft">15</span></div>
         </div>
-        <div id="jumpscare"></div>
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div class="power-bar-container">
+            <div style="color: white; margin-bottom: 5px; font-size: 14px;">Shot Power</div>
+            <div class="power-bar">
+                <div class="power-fill" id="powerFill"></div>
+            </div>
+        </div>
+        <div class="controls">
+            🎯 Click and drag on white ball to aim • Release to shoot
+        </div>
+        <div>
+            <button onclick="resetGame()">New Game</button>
+        </div>
+        <div class="message" id="message">Player 1's turn</div>
     </div>
 
     <script>
-        const cursor = document.getElementById('cursor');
-        const corridor = document.getElementById('corridor');
-        const message = document.getElementById('message');
-        const counter = document.getElementById('counter');
-        const jumpscare = document.getElementById('jumpscare');
-        const shadow = document.getElementById('shadow');
-        const heartbeat = document.getElementById('heartbeat');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const playerElement = document.getElementById('player');
+        const ballsLeftElement = document.getElementById('ballsLeft');
+        const messageElement = document.getElementById('message');
+        const powerFill = document.getElementById('powerFill');
 
-        let gameActive = false;
-        let timeLeft = 60;
-        let clicks = 0;
-        let clicksNeeded = 50;
-        let scareTimer;
-        let whisperTimer;
-        let ghostTimer;
+        let balls = [];
+        let cueBall;
+        let isDragging = false;
+        let dragStart = {x: 0, y: 0};
+        let aimLine = {x: 0, y: 0};
+        let currentPlayer = 1;
+        let scores = [0, 0];
+        let ballsPotted = 0;
+        let canShoot = true;
 
-        const scaryMessages = [
-            "I can see you...",
-            "Don't look behind you...",
-            "It's getting closer...",
-            "You can't escape...",
-            "I'm right behind you...",
-            "Why are you running?",
-            "You're not alone...",
-            "Can you hear the footsteps?",
-            "It's watching you...",
-            "Turn around...",
-            "The exit doesn't exist...",
-            "You shouldn't have come here..."
+        const FRICTION = 0.98;
+        const BALL_RADIUS = 12;
+        const POCKET_RADIUS = 20;
+
+        const pockets = [
+            {x: 20, y: 20},
+            {x: canvas.width / 2, y: 10},
+            {x: canvas.width - 20, y: 20},
+            {x: 20, y: canvas.height - 20},
+            {x: canvas.width / 2, y: canvas.height - 10},
+            {x: canvas.width - 20, y: canvas.height - 20}
         ];
 
-        const whispers = [
-            "help me...",
-            "run...",
-            "it's here...",
-            "behind you...",
-            "leave...",
-            "too late..."
-        ];
+        class Ball {
+            constructor(x, y, color, isCue = false) {
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.radius = BALL_RADIUS;
+                this.color = color;
+                this.isCue = isCue;
+                this.active = true;
+            }
 
-        // Custom cursor follow
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-        });
+            update() {
+                if (!this.active) return;
 
-        function startGame() {
-            document.getElementById('startScreen').classList.remove('active');
-            document.getElementById('gameScreen').classList.add('active');
-            gameActive = true;
-            
-            startTimer();
-            startScareEvents();
-            startWhispers();
-            spawnGhosts();
-            increaseDarkness();
+                this.x += this.vx;
+                this.y += this.vy;
+
+                this.vx *= FRICTION;
+                this.vy *= FRICTION;
+
+                // Stop if moving very slowly
+                if (Math.abs(this.vx) < 0.05) this.vx = 0;
+                if (Math.abs(this.vy) < 0.05) this.vy = 0;
+
+                // Wall collision
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.vx *= -0.8;
+                    this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                }
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                    this.vy *= -0.8;
+                    this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                }
+
+                // Check pocket collision
+                pockets.forEach(pocket => {
+                    const dx = this.x - pocket.x;
+                    const dy = this.y - pocket.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < POCKET_RADIUS) {
+                        if (this.isCue) {
+                            // Cue ball potted - foul
+                            this.active = false;
+                            messageElement.textContent = "Foul! Cue ball potted!";
+                            setTimeout(() => {
+                                this.active = true;
+                                this.x = 200;
+                                this.y = canvas.height / 2;
+                                this.vx = 0;
+                                this.vy = 0;
+                                switchPlayer();
+                            }, 1500);
+                        } else {
+                            // Colored ball potted
+                            this.active = false;
+                            ballsPotted++;
+                            scores[currentPlayer - 1] += 10;
+                            updateScore();
+                            messageElement.textContent = "Ball potted! +10 points";
+                        }
+                    }
+                });
+            }
+
+            draw() {
+                if (!this.active) return;
+
+                ctx.save();
+                
+                // Shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x + 2, this.y + 2, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Ball
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radius / 3,
+                    this.y - this.radius / 3,
+                    this.radius / 4,
+                    this.x,
+                    this.y,
+                    this.radius
+                );
+                
+                if (this.isCue) {
+                    gradient.addColorStop(0, '#ffffff');
+                    gradient.addColorStop(1, '#e0e0e0');
+                } else {
+                    const lightColor = lightenColor(this.color, 40);
+                    gradient.addColorStop(0, lightColor);
+                    gradient.addColorStop(1, this.color);
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius / 3, this.y - this.radius / 3, this.radius / 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Border
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            isMoving() {
+                return Math.abs(this.vx) > 0 || Math.abs(this.vy) > 0;
+            }
         }
 
-        function startTimer() {
-            const timerInterval = setInterval(() => {
-                if (!gameActive) {
-                    clearInterval(timerInterval);
-                    return;
+        function lightenColor(color, percent) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255))
+                .toString(16).slice(1);
+        }
+
+        function initBalls() {
+            balls = [];
+            ballsPotted = 0;
+
+            // Cue ball
+            cueBall = new Ball(200, canvas.height / 2, '#ffffff', true);
+            balls.push(cueBall);
+
+            // Rack the balls in triangle formation
+            const startX = 600;
+            const startY = canvas.height / 2;
+            const spacing = BALL_RADIUS * 2 + 2;
+            
+            const colors = ['#dc2626', '#eab308', '#16a34a', '#8b5cf6', '#f97316', 
+                           '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#f59e0b',
+                           '#10b981', '#ef4444', '#3b82f6', '#a855f7', '#14b8a6'];
+
+            let colorIndex = 0;
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col <= row; col++) {
+                    const x = startX + row * spacing * 0.866;
+                    const y = startY - (row * spacing / 2) + col * spacing;
+                    balls.push(new Ball(x, y, colors[colorIndex % colors.length]));
+                    colorIndex++;
                 }
+            }
+        }
+
+        function checkCollisions() {
+            for (let i = 0; i < balls.length; i++) {
+                if (!balls[i].active) continue;
                 
-                timeLeft--;
-                counter.textContent = timeLeft;
-                
-                if (timeLeft <= 10) {
-                    counter.style.animation = 'scareShake 0.2s infinite';
-                    heartbeat.style.animationDuration = '0.8s';
+                for (let j = i + 1; j < balls.length; j++) {
+                    if (!balls[j].active) continue;
+                    
+                    const dx = balls[j].x - balls[i].x;
+                    const dy = balls[j].y - balls[i].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < balls[i].radius + balls[j].radius) {
+                        // Collision detected
+                        const angle = Math.atan2(dy, dx);
+                        const sin = Math.sin(angle);
+                        const cos = Math.cos(angle);
+
+                        // Rotate velocities
+                        const vx1 = balls[i].vx * cos + balls[i].vy * sin;
+                        const vy1 = balls[i].vy * cos - balls[i].vx * sin;
+                        const vx2 = balls[j].vx * cos + balls[j].vy * sin;
+                        const vy2 = balls[j].vy * cos - balls[j].vx * sin;
+
+                        // Swap velocities (elastic collision)
+                        const temp = vx1;
+                        const newVx1 = vx2;
+                        const newVx2 = temp;
+
+                        // Rotate back
+                        balls[i].vx = newVx1 * cos - vy1 * sin;
+                        balls[i].vy = vy1 * cos + newVx1 * sin;
+                        balls[j].vx = newVx2 * cos - vy2 * sin;
+                        balls[j].vy = vy2 * cos + newVx2 * sin;
+
+                        // Separate balls
+                        const overlap = balls[i].radius + balls[j].radius - dist;
+                        const separateX = overlap * cos / 2;
+                        const separateY = overlap * sin / 2;
+
+                        balls[i].x -= separateX;
+                        balls[i].y -= separateY;
+                        balls[j].x += separateX;
+                        balls[j].y += separateY;
+                    }
                 }
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#0B6623';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw table pattern
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+
+            // Draw pockets
+            pockets.forEach(pocket => {
+                const gradient = ctx.createRadialGradient(pocket.x, pocket.y, 0, pocket.x, pocket.y, POCKET_RADIUS);
+                gradient.addColorStop(0, '#000000');
+                gradient.addColorStop(1, '#1a1a1a');
                 
-                if (timeLeft <= 0) {
-                    triggerJumpscare('☠️', 'TIME IS UP...');
-                    clearInterval(timerInterval);
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(pocket.x, pocket.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#8B4513';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            });
+
+            // Update and draw balls
+            balls.forEach(ball => {
+                ball.update();
+                ball.draw();
+            });
+
+            checkCollisions();
+
+            // Draw aim line
+            if (isDragging && canShoot) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(cueBall.x, cueBall.y);
+                ctx.lineTo(aimLine.x, aimLine.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw power indicator
+                const power = Math.min(
+                    Math.sqrt(
+                        Math.pow(aimLine.x - cueBall.x, 2) + 
+                        Math.pow(aimLine.y - cueBall.y, 2)
+                    ) / 2,
+                    100
+                );
+                powerFill.style.width = power + '%';
+            }
+
+            // Check if all balls stopped
+            const allStopped = balls.every(ball => !ball.active || !ball.isMoving());
+            if (allStopped && !canShoot) {
+                canShoot = true;
+                
+                // Check win condition
+                if (ballsPotted >= 15) {
+                    messageElement.textContent = `Player ${currentPlayer} wins! 🎉`;
+                }
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            playerElement.textContent = currentPlayer;
+            messageElement.textContent = `Player ${currentPlayer}'s turn`;
+        }
+
+        function updateScore() {
+            scoreElement.textContent = scores[currentPlayer - 1];
+            ballsLeftElement.textContent = 15 - ballsPotted;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!canShoot) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const dx = x - cueBall.x;
+            const dy = y - cueBall.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < cueBall.radius + 10) {
+                isDragging = true;
+                dragStart = {x, y};
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const rect = canvas.getBoundingClientRect();
+            aimLine.x = e.clientX - rect.left;
+            aimLine.y = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (!isDragging || !canShoot) return;
+
+            const dx = aimLine.x - cueBall.x;
+            const dy = aimLine.y - cueBall.y;
+            const power = Math.sqrt(dx * dx + dy * dy) / 15;
+
+            cueBall.vx = -dx * power * 0.1;
+            cueBall.vy = -dy * power * 0.1;
+
+            isDragging = false;
+            canShoot = false;
+            powerFill.style.width = '0%';
+            
+            setTimeout(() => {
+                const ballsMoving = balls.some(ball => ball.active && ball.isMoving());
+                if (!ballsMoving) {
+                    const oldScore = scores[currentPlayer - 1];
+                    setTimeout(() => {
+                        if (scores[currentPlayer - 1] === oldScore && ballsPotted < 15) {
+                            switchPlayer();
+                        }
+                    }, 1000);
                 }
             }, 1000);
-        }
-
-        function startScareEvents() {
-            scareTimer = setInterval(() => {
-                if (!gameActive) return;
-                
-                const randomMessage = scaryMessages[Math.floor(Math.random() * scaryMessages.length)];
-                message.textContent = randomMessage;
-                message.style.fontSize = Math.random() * 2 + 1.5 + 'em';
-                
-                // Random screen glitch
-                if (Math.random() < 0.3) {
-                    corridor.classList.add('glitch');
-                    setTimeout(() => corridor.classList.remove('glitch'), 200);
-                }
-                
-                // Random eye appearance
-                if (Math.random() < 0.2) {
-                    showEyes();
-                }
-            }, 3000);
-        }
-
-        function startWhispers() {
-            whisperTimer = setInterval(() => {
-                if (!gameActive) return;
-                
-                const whisper = document.createElement('div');
-                whisper.className = 'whisper';
-                whisper.textContent = whispers[Math.floor(Math.random() * whispers.length)];
-                whisper.style.left = Math.random() * 80 + 10 + '%';
-                whisper.style.top = Math.random() * 80 + 10 + '%';
-                corridor.appendChild(whisper);
-                
-                setTimeout(() => whisper.remove(), 4000);
-            }, 5000);
-        }
-
-        function spawnGhosts() {
-            ghostTimer = setInterval(() => {
-                if (!gameActive) return;
-                
-                const ghost = document.createElement('div');
-                ghost.className = 'ghost';
-                ghost.textContent = ['👻', '💀', '☠️', '👹'][Math.floor(Math.random() * 4)];
-                ghost.style.left = Math.random() * 80 + 10 + '%';
-                ghost.style.top = Math.random() * 80 + 10 + '%';
-                corridor.appendChild(ghost);
-                
-                setTimeout(() => {
-                    ghost.style.opacity = '0.7';
-                    setTimeout(() => {
-                        ghost.style.opacity = '0';
-                        setTimeout(() => ghost.remove(), 300);
-                    }, 500);
-                }, 100);
-                
-                // Random jump scare chance
-                if (Math.random() < 0.15 && clicks < clicksNeeded / 2) {
-                    setTimeout(() => {
-                        if (gameActive) {
-                            triggerJumpscare('👹', 'I FOUND YOU!!!');
-                        }
-                    }, 2000);
-                }
-            }, 4000);
-        }
-
-        function showEyes() {
-            const eyes = document.createElement('div');
-            eyes.className = 'eyes';
-            eyes.innerHTML = '<div class="eye"></div><div class="eye"></div>';
-            eyes.style.left = Math.random() * 70 + 15 + '%';
-            eyes.style.top = Math.random() * 50 + 10 + '%';
-            corridor.appendChild(eyes);
-            
-            setTimeout(() => eyes.remove(), 3000);
-        }
-
-        function increaseDarkness() {
-            let darkness = 0;
-            setInterval(() => {
-                if (!gameActive) return;
-                darkness += 5;
-                shadow.style.height = Math.min(darkness, 80) + '%';
-            }, 5000);
-        }
-
-        corridor.addEventListener('click', (e) => {
-            if (!gameActive) return;
-            
-            clicks++;
-            
-            // Create click effect
-            const ripple = document.createElement('div');
-            ripple.style.position = 'absolute';
-            ripple.style.left = e.clientX + 'px';
-            ripple.style.top = e.clientY + 'px';
-            ripple.style.width = '20px';
-            ripple.style.height = '20px';
-            ripple.style.background = '#8B0000';
-            ripple.style.borderRadius = '50%';
-            ripple.style.transform = 'translate(-50%, -50%)';
-            ripple.style.pointerEvents = 'none';
-            ripple.style.animation = 'pulse 0.5s forwards';
-            document.body.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 500);
-            
-            message.textContent = `Keep clicking... ${clicks}/${clicksNeeded}`;
-            
-            // Tension increase
-            if (clicks > 20 && clicks < 30) {
-                message.textContent = "IT'S GETTING CLOSER...";
-            }
-            
-            if (clicks > 35 && clicks < 45) {
-                message.textContent = "YOU CAN'T ESCAPE!!!";
-                corridor.style.animation = 'scareShake 0.5s';
-                setTimeout(() => corridor.style.animation = '', 500);
-            }
-            
-            if (clicks >= clicksNeeded) {
-                winGame();
-            }
         });
 
-        function triggerJumpscare(emoji, text) {
-            gameActive = false;
-            jumpscare.classList.add('active');
-            jumpscare.innerHTML = `<div style="font-size: 20em;">${emoji}</div>`;
-            jumpscare.style.background = '#000';
-            
-            // Create scream text
-            setTimeout(() => {
-                const scream = document.createElement('div');
-                scream.style.position = 'absolute';
-                scream.style.fontSize = '5em';
-                scream.style.color = '#ff0000';
-                scream.style.textShadow = '0 0 50px #ff0000';
-                scream.style.animation = 'scareShake 0.1s infinite';
-                scream.textContent = text;
-                jumpscare.appendChild(scream);
-            }, 500);
-            
-            setTimeout(() => {
-                location.reload();
-            }, 3000);
+        function resetGame() {
+            currentPlayer = 1;
+            scores = [0, 0];
+            initBalls();
+            updateScore();
+            playerElement.textContent = currentPlayer;
+            messageElement.textContent = "Player 1's turn";
+            canShoot = true;
+            powerFill.style.width = '0%';
         }
 
-        function winGame() {
-            gameActive = false;
-            clearInterval(scareTimer);
-            clearInterval(whisperTimer);
-            clearInterval(ghostTimer);
-            
-            message.innerHTML = `
-                <div style="font-size: 2em; color: #00ff00; text-shadow: 0 0 20px #00ff00;">
-                    YOU ESCAPED...<br>
-                    <span style="font-size: 0.3em; color: #8B0000; margin-top: 20px;">
-                        ...or did you?
-                    </span>
-                </div>
-            `;
-            
-            // Fake ending - jump scare after "winning"
-            setTimeout(() => {
-                triggerJumpscare('😈', 'YOU THOUGHT YOU WON?!');
-            }, 2000);
-        }
-
-        // Random screen shake
-        setInterval(() => {
-            if (gameActive && Math.random() < 0.1) {
-                document.body.style.animation = 'scareShake 0.2s';
-                setTimeout(() => document.body.style.animation = '', 200);
-            }
-        }, 5000);
+        // Initialize and start
+        initBalls();
+        draw();
     </script>
 </body>
 </html>
