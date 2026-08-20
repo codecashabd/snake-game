@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snooker Game</title>
+    <title>Street Runner</title>
     <style>
         * {
             margin: 0;
@@ -16,530 +16,579 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
+            font-family: 'Arial Black', Arial, sans-serif;
+            overflow: hidden;
         }
 
         .game-container {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-
-        h1 {
-            color: white;
-            margin-bottom: 15px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-
-        .info-bar {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 15px;
-            color: white;
-            font-size: 18px;
-            gap: 20px;
-        }
-
-        .info-item {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px 20px;
-            border-radius: 8px;
+            position: relative;
+            width: 800px;
+            height: 600px;
         }
 
         #gameCanvas {
-            border: 8px solid #8B4513;
-            background: linear-gradient(to bottom, #0B6623 0%, #0a5a1f 100%);
-            box-shadow: 
-                0 10px 40px rgba(0, 0, 0, 0.5),
-                inset 0 0 50px rgba(0, 0, 0, 0.3);
+            border: 4px solid #333;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(to bottom, #87CEEB 0%, #555 100%);
+            display: block;
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .score-box, .coins-box, .distance-box {
+            background: rgba(0, 0, 0, 0.7);
+            color: #FFD700;
+            padding: 10px 20px;
             border-radius: 10px;
-            cursor: crosshair;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            border: 3px solid #FFD700;
+        }
+
+        .start-screen, .game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .start-screen.hidden, .game-over-screen.hidden {
+            display: none;
+        }
+
+        h1 {
+            color: #FFD700;
+            font-size: 4em;
+            margin-bottom: 20px;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .btn {
+            background: linear-gradient(to bottom, #FFD700, #FFA500);
+            color: #000;
+            border: 4px solid #FF8C00;
+            padding: 15px 40px;
+            font-size: 1.5em;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px #FFD700;
+        }
+
+        .instructions {
+            color: white;
+            font-size: 1.2em;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .final-score {
+            color: #FFD700;
+            font-size: 2em;
+            margin-bottom: 20px;
         }
 
         .controls {
-            margin-top: 15px;
-            color: white;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
             font-size: 14px;
-        }
-
-        .power-bar-container {
-            margin-top: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px;
-            border-radius: 8px;
-            display: inline-block;
-        }
-
-        .power-bar {
-            width: 300px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.2);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
             border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-        }
-
-        .power-fill {
-            height: 100%;
-            background: linear-gradient(to right, #4ade80, #fbbf24, #ef4444);
-            width: 0%;
-            transition: width 0.05s;
-        }
-
-        button {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-            padding: 10px 25px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 10px 5px;
-            transition: all 0.3s;
-        }
-
-        button:hover {
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(1.05);
-        }
-
-        .message {
-            color: #fbbf24;
-            font-size: 18px;
-            margin-top: 10px;
-            min-height: 25px;
-            font-weight: bold;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>🎱 Snooker Game 🎱</h1>
-        <div class="info-bar">
-            <div class="info-item">Player: <span id="player">1</span></div>
-            <div class="info-item">Score: <span id="score">0</span></div>
-            <div class="info-item">Balls Left: <span id="ballsLeft">15</span></div>
+        <div class="hud">
+            <div class="score-box">Score: <span id="score">0</span></div>
+            <div class="coins-box">🪙 <span id="coins">0</span></div>
+            <div class="distance-box">Distance: <span id="distance">0</span>m</div>
         </div>
-        <canvas id="gameCanvas" width="800" height="400"></canvas>
-        <div class="power-bar-container">
-            <div style="color: white; margin-bottom: 5px; font-size: 14px;">Shot Power</div>
-            <div class="power-bar">
-                <div class="power-fill" id="powerFill"></div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div class="start-screen" id="startScreen">
+            <h1>🏃 STREET RUNNER 🏃</h1>
+            <button class="btn" onclick="startGame()">START GAME</button>
+            <div class="instructions">
+                ⬅️ ➡️ Arrow Keys to Move<br>
+                ⬆️ Space to Jump<br>
+                Avoid Obstacles • Collect Coins
             </div>
         </div>
+
+        <div class="game-over-screen hidden" id="gameOverScreen">
+            <h1>GAME OVER!</h1>
+            <div class="final-score">
+                Final Score: <span id="finalScore">0</span><br>
+                Coins: <span id="finalCoins">0</span> 🪙
+            </div>
+            <button class="btn" onclick="restartGame()">PLAY AGAIN</button>
+        </div>
+
         <div class="controls">
-            🎯 Click and drag on white ball to aim • Release to shoot
+            ⬅️ ➡️ Move | SPACE Jump
         </div>
-        <div>
-            <button onclick="resetGame()">New Game</button>
-        </div>
-        <div class="message" id="message">Player 1's turn</div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const scoreElement = document.getElementById('score');
-        const playerElement = document.getElementById('player');
-        const ballsLeftElement = document.getElementById('ballsLeft');
-        const messageElement = document.getElementById('message');
-        const powerFill = document.getElementById('powerFill');
 
-        let balls = [];
-        let cueBall;
-        let isDragging = false;
-        let dragStart = {x: 0, y: 0};
-        let aimLine = {x: 0, y: 0};
-        let currentPlayer = 1;
-        let scores = [0, 0];
-        let ballsPotted = 0;
-        let canShoot = true;
+        let gameRunning = false;
+        let score = 0;
+        let coins = 0;
+        let distance = 0;
+        let gameSpeed = 5;
+        let obstacleTimer = 0;
+        let coinTimer = 0;
 
-        const FRICTION = 0.98;
-        const BALL_RADIUS = 12;
-        const POCKET_RADIUS = 20;
+        // Player
+        const player = {
+            x: 1, // 0 = left, 1 = middle, 2 = right
+            y: 400,
+            targetY: 400,
+            width: 40,
+            height: 60,
+            jumping: false,
+            jumpSpeed: 0,
+            gravity: 1.2
+        };
 
-        const pockets = [
-            {x: 20, y: 20},
-            {x: canvas.width / 2, y: 10},
-            {x: canvas.width - 20, y: 20},
-            {x: 20, y: canvas.height - 20},
-            {x: canvas.width / 2, y: canvas.height - 10},
-            {x: canvas.width - 20, y: canvas.height - 20}
-        ];
+        const lanes = [250, 380, 510]; // X positions for 3 lanes
+        const obstacles = [];
+        const coinsList = [];
+        const buildings = [];
 
-        class Ball {
-            constructor(x, y, color, isCue = false) {
-                this.x = x;
-                this.y = y;
-                this.vx = 0;
-                this.vy = 0;
-                this.radius = BALL_RADIUS;
-                this.color = color;
-                this.isCue = isCue;
-                this.active = true;
+        // Initialize buildings for background
+        for (let i = 0; i < 10; i++) {
+            buildings.push({
+                x: Math.random() * canvas.width,
+                y: 50 + Math.random() * 100,
+                width: 60 + Math.random() * 40,
+                height: 100 + Math.random() * 100,
+                speed: 0.5 + Math.random() * 0.5,
+                color: `hsl(${Math.random() * 60 + 200}, 50%, ${40 + Math.random() * 20}%)`
+            });
+        }
+
+        class Obstacle {
+            constructor() {
+                this.lane = Math.floor(Math.random() * 3);
+                this.x = lanes[this.lane];
+                this.y = -100;
+                this.width = 50;
+                this.height = 60;
+                this.speed = gameSpeed;
+                this.type = Math.random() > 0.5 ? 'box' : 'barrier';
+                this.color = this.type === 'box' ? '#8B4513' : '#FF4444';
             }
 
             update() {
-                if (!this.active) return;
-
-                this.x += this.vx;
-                this.y += this.vy;
-
-                this.vx *= FRICTION;
-                this.vy *= FRICTION;
-
-                // Stop if moving very slowly
-                if (Math.abs(this.vx) < 0.05) this.vx = 0;
-                if (Math.abs(this.vy) < 0.05) this.vy = 0;
-
-                // Wall collision
-                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
-                    this.vx *= -0.8;
-                    this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-                }
-                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
-                    this.vy *= -0.8;
-                    this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-                }
-
-                // Check pocket collision
-                pockets.forEach(pocket => {
-                    const dx = this.x - pocket.x;
-                    const dy = this.y - pocket.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < POCKET_RADIUS) {
-                        if (this.isCue) {
-                            // Cue ball potted - foul
-                            this.active = false;
-                            messageElement.textContent = "Foul! Cue ball potted!";
-                            setTimeout(() => {
-                                this.active = true;
-                                this.x = 200;
-                                this.y = canvas.height / 2;
-                                this.vx = 0;
-                                this.vy = 0;
-                                switchPlayer();
-                            }, 1500);
-                        } else {
-                            // Colored ball potted
-                            this.active = false;
-                            ballsPotted++;
-                            scores[currentPlayer - 1] += 10;
-                            updateScore();
-                            messageElement.textContent = "Ball potted! +10 points";
-                        }
-                    }
-                });
+                this.y += this.speed;
             }
 
             draw() {
-                if (!this.active) return;
-
                 ctx.save();
                 
                 // Shadow
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                ctx.beginPath();
-                ctx.arc(this.x + 2, this.y + 2, this.radius, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillRect(this.x - this.width/2 + 5, this.y + this.height + 5, this.width, 10);
 
-                // Ball
-                const gradient = ctx.createRadialGradient(
-                    this.x - this.radius / 3,
-                    this.y - this.radius / 3,
-                    this.radius / 4,
-                    this.x,
-                    this.y,
-                    this.radius
-                );
-                
-                if (this.isCue) {
-                    gradient.addColorStop(0, '#ffffff');
-                    gradient.addColorStop(1, '#e0e0e0');
+                if (this.type === 'box') {
+                    // Box obstacle
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(this.x - this.width/2, this.y, this.width, this.height);
+                    
+                    // Details
+                    ctx.strokeStyle = '#654321';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(this.x - this.width/2, this.y, this.width, this.height);
+                    
+                    ctx.strokeStyle = '#A0522D';
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - this.width/2, this.y + this.height/2);
+                    ctx.lineTo(this.x + this.width/2, this.y + this.height/2);
+                    ctx.stroke();
                 } else {
-                    const lightColor = lightenColor(this.color, 40);
-                    gradient.addColorStop(0, lightColor);
-                    gradient.addColorStop(1, this.color);
+                    // Barrier obstacle
+                    ctx.fillStyle = '#FF4444';
+                    ctx.fillRect(this.x - this.width/2, this.y, this.width, this.height);
+                    
+                    // Stripes
+                    ctx.fillStyle = '#FFFFFF';
+                    for (let i = 0; i < 3; i++) {
+                        ctx.fillRect(this.x - this.width/2, this.y + i * 20, this.width, 10);
+                    }
+                    
+                    ctx.strokeStyle = '#CC0000';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(this.x - this.width/2, this.y, this.width, this.height);
                 }
                 
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Shine
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.beginPath();
-                ctx.arc(this.x - this.radius / 3, this.y - this.radius / 3, this.radius / 3, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Border
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.stroke();
-
                 ctx.restore();
             }
 
-            isMoving() {
-                return Math.abs(this.vx) > 0 || Math.abs(this.vy) > 0;
+            isOffScreen() {
+                return this.y > canvas.height + 100;
             }
         }
 
-        function lightenColor(color, percent) {
-            const num = parseInt(color.replace('#', ''), 16);
-            const amt = Math.round(2.55 * percent);
-            const R = (num >> 16) + amt;
-            const G = (num >> 8 & 0x00FF) + amt;
-            const B = (num & 0x0000FF) + amt;
-            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-                (B < 255 ? B < 1 ? 0 : B : 255))
-                .toString(16).slice(1);
-        }
-
-        function initBalls() {
-            balls = [];
-            ballsPotted = 0;
-
-            // Cue ball
-            cueBall = new Ball(200, canvas.height / 2, '#ffffff', true);
-            balls.push(cueBall);
-
-            // Rack the balls in triangle formation
-            const startX = 600;
-            const startY = canvas.height / 2;
-            const spacing = BALL_RADIUS * 2 + 2;
-            
-            const colors = ['#dc2626', '#eab308', '#16a34a', '#8b5cf6', '#f97316', 
-                           '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#f59e0b',
-                           '#10b981', '#ef4444', '#3b82f6', '#a855f7', '#14b8a6'];
-
-            let colorIndex = 0;
-            for (let row = 0; row < 5; row++) {
-                for (let col = 0; col <= row; col++) {
-                    const x = startX + row * spacing * 0.866;
-                    const y = startY - (row * spacing / 2) + col * spacing;
-                    balls.push(new Ball(x, y, colors[colorIndex % colors.length]));
-                    colorIndex++;
-                }
+        class Coin {
+            constructor() {
+                this.lane = Math.floor(Math.random() * 3);
+                this.x = lanes[this.lane];
+                this.y = -50;
+                this.radius = 15;
+                this.speed = gameSpeed;
+                this.rotation = 0;
             }
-        }
 
-        function checkCollisions() {
-            for (let i = 0; i < balls.length; i++) {
-                if (!balls[i].active) continue;
+            update() {
+                this.y += this.speed;
+                this.rotation += 0.1;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
                 
-                for (let j = i + 1; j < balls.length; j++) {
-                    if (!balls[j].active) continue;
-                    
-                    const dx = balls[j].x - balls[i].x;
-                    const dy = balls[j].y - balls[i].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < balls[i].radius + balls[j].radius) {
-                        // Collision detected
-                        const angle = Math.atan2(dy, dx);
-                        const sin = Math.sin(angle);
-                        const cos = Math.cos(angle);
-
-                        // Rotate velocities
-                        const vx1 = balls[i].vx * cos + balls[i].vy * sin;
-                        const vy1 = balls[i].vy * cos - balls[i].vx * sin;
-                        const vx2 = balls[j].vx * cos + balls[j].vy * sin;
-                        const vy2 = balls[j].vy * cos - balls[j].vx * sin;
-
-                        // Swap velocities (elastic collision)
-                        const temp = vx1;
-                        const newVx1 = vx2;
-                        const newVx2 = temp;
-
-                        // Rotate back
-                        balls[i].vx = newVx1 * cos - vy1 * sin;
-                        balls[i].vy = vy1 * cos + newVx1 * sin;
-                        balls[j].vx = newVx2 * cos - vy2 * sin;
-                        balls[j].vy = vy2 * cos + newVx2 * sin;
-
-                        // Separate balls
-                        const overlap = balls[i].radius + balls[j].radius - dist;
-                        const separateX = overlap * cos / 2;
-                        const separateY = overlap * sin / 2;
-
-                        balls[i].x -= separateX;
-                        balls[i].y -= separateY;
-                        balls[j].x += separateX;
-                        balls[j].y += separateY;
-                    }
-                }
-            }
-        }
-
-        function draw() {
-            // Clear canvas
-            ctx.fillStyle = '#0B6623';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw table pattern
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < canvas.width; i += 20) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, canvas.height);
-                ctx.stroke();
-            }
-            for (let i = 0; i < canvas.height; i += 20) {
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(canvas.width, i);
-                ctx.stroke();
-            }
-
-            // Draw pockets
-            pockets.forEach(pocket => {
-                const gradient = ctx.createRadialGradient(pocket.x, pocket.y, 0, pocket.x, pocket.y, POCKET_RADIUS);
-                gradient.addColorStop(0, '#000000');
-                gradient.addColorStop(1, '#1a1a1a');
+                // Coin
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+                gradient.addColorStop(0, '#FFD700');
+                gradient.addColorStop(0.7, '#FFA500');
+                gradient.addColorStop(1, '#FF8C00');
                 
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(pocket.x, pocket.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
                 ctx.fill();
-
-                ctx.strokeStyle = '#8B4513';
+                
+                // Border
+                ctx.strokeStyle = '#FF8C00';
                 ctx.lineWidth = 3;
                 ctx.stroke();
-            });
-
-            // Update and draw balls
-            balls.forEach(ball => {
-                ball.update();
-                ball.draw();
-            });
-
-            checkCollisions();
-
-            // Draw aim line
-            if (isDragging && canShoot) {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(cueBall.x, cueBall.y);
-                ctx.lineTo(aimLine.x, aimLine.y);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                // Draw power indicator
-                const power = Math.min(
-                    Math.sqrt(
-                        Math.pow(aimLine.x - cueBall.x, 2) + 
-                        Math.pow(aimLine.y - cueBall.y, 2)
-                    ) / 2,
-                    100
-                );
-                powerFill.style.width = power + '%';
-            }
-
-            // Check if all balls stopped
-            const allStopped = balls.every(ball => !ball.active || !ball.isMoving());
-            if (allStopped && !canShoot) {
-                canShoot = true;
                 
-                // Check win condition
-                if (ballsPotted >= 15) {
-                    messageElement.textContent = `Player ${currentPlayer} wins! 🎉`;
+                // Shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(-5, -5, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+
+            isOffScreen() {
+                return this.y > canvas.height + 50;
+            }
+        }
+
+        function drawBackground() {
+            // Sky
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGradient.addColorStop(0, '#87CEEB');
+            skyGradient.addColorStop(1, '#E0F6FF');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, canvas.width, 300);
+
+            // Buildings (parallax)
+            buildings.forEach(building => {
+                ctx.fillStyle = building.color;
+                ctx.fillRect(building.x, building.y, building.width, building.height);
+                
+                // Windows
+                ctx.fillStyle = 'rgba(255, 255, 200, 0.8)';
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        ctx.fillRect(
+                            building.x + 10 + i * 15,
+                            building.y + 10 + j * 20,
+                            10, 15
+                        );
+                    }
+                }
+
+                building.y += building.speed;
+                if (building.y > canvas.height) {
+                    building.y = -building.height;
+                    building.x = Math.random() * canvas.width;
+                }
+            });
+
+            // Road
+            const roadGradient = ctx.createLinearGradient(200, 0, 600, 0);
+            roadGradient.addColorStop(0, '#555');
+            roadGradient.addColorStop(0.5, '#666');
+            roadGradient.addColorStop(1, '#555');
+            ctx.fillStyle = roadGradient;
+            
+            // Perspective road
+            ctx.beginPath();
+            ctx.moveTo(200, 0);
+            ctx.lineTo(0, canvas.height);
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(600, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            // Road lines
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([20, 20]);
+            
+            for (let i = 0; i < 2; i++) {
+                const x = 300 + i * 200;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(150 + i * 500, canvas.height);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // Sidewalks
+            ctx.fillStyle = '#888';
+            ctx.fillRect(0, 300, 200, canvas.height);
+            ctx.fillRect(600, 300, 200, canvas.height);
+        }
+
+        function drawPlayer() {
+            const targetX = lanes[player.x];
+            const currentX = player.x === 1 ? 380 : (player.x === 0 ? 250 : 510);
+            
+            ctx.save();
+            
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(targetX, 460, 25, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body
+            ctx.fillStyle = '#3B82F6';
+            ctx.fillRect(targetX - player.width/2, player.y, player.width, player.height);
+            
+            // Head
+            ctx.fillStyle = '#FDB76C';
+            ctx.beginPath();
+            ctx.arc(targetX, player.y - 10, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(targetX - 8, player.y - 12, 3, 0, Math.PI * 2);
+            ctx.arc(targetX + 8, player.y - 12, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Arms
+            ctx.strokeStyle = '#FDB76C';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(targetX - player.width/2, player.y + 15);
+            ctx.lineTo(targetX - player.width/2 - 15, player.y + 30);
+            ctx.moveTo(targetX + player.width/2, player.y + 15);
+            ctx.lineTo(targetX + player.width/2 + 15, player.y + 30);
+            ctx.stroke();
+
+            // Legs
+            ctx.strokeStyle = '#1E40AF';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(targetX - 10, player.y + player.height);
+            ctx.lineTo(targetX - 10, player.y + player.height + 20);
+            ctx.moveTo(targetX + 10, player.y + player.height);
+            ctx.lineTo(targetX + 10, player.y + player.height + 20);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function updatePlayer() {
+            // Jumping
+            if (player.jumping) {
+                player.jumpSpeed += player.gravity;
+                player.y += player.jumpSpeed;
+
+                if (player.y >= player.targetY) {
+                    player.y = player.targetY;
+                    player.jumping = false;
+                    player.jumpSpeed = 0;
+                }
+            }
+        }
+
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + obj2.width/2 &&
+                   obj1.x + obj1.width/2 > obj2.x - obj2.width/2 &&
+                   obj1.y < obj2.y + obj2.height &&
+                   obj1.y + obj1.height > obj2.y;
+        }
+
+        function checkCoinCollision(player, coin) {
+            const playerX = lanes[player.x];
+            const dist = Math.sqrt(
+                Math.pow(playerX - coin.x, 2) + 
+                Math.pow(player.y + player.height/2 - coin.y, 2)
+            );
+            return dist < player.width/2 + coin.radius;
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawBackground();
+            
+            // Update distance and score
+            distance += 0.1;
+            score = Math.floor(distance);
+            document.getElementById('score').textContent = score;
+            document.getElementById('distance').textContent = Math.floor(distance);
+
+            // Increase difficulty
+            if (score % 100 === 0 && score > 0) {
+                gameSpeed += 0.5;
+            }
+
+            // Spawn obstacles
+            obstacleTimer++;
+            if (obstacleTimer > 60 - gameSpeed * 2) {
+                obstacles.push(new Obstacle());
+                obstacleTimer = 0;
+            }
+
+            // Spawn coins
+            coinTimer++;
+            if (coinTimer > 40) {
+                coinsList.push(new Coin());
+                coinTimer = 0;
+            }
+
+            // Update and draw obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].update();
+                obstacles[i].draw();
+
+                const playerX = lanes[player.x];
+                const collision = Math.abs(playerX - obstacles[i].x) < 40 &&
+                                  player.y + player.height > obstacles[i].y &&
+                                  player.y < obstacles[i].y + obstacles[i].height;
+
+                if (collision && !player.jumping) {
+                    gameOver();
+                }
+
+                if (obstacles[i].isOffScreen()) {
+                    obstacles.splice(i, 1);
                 }
             }
 
-            requestAnimationFrame(draw);
+            // Update and draw coins
+            for (let i = coinsList.length - 1; i >= 0; i--) {
+                coinsList[i].update();
+                coinsList[i].draw();
+
+                if (checkCoinCollision(player, coinsList[i])) {
+                    coins++;
+                    score += 10;
+                    document.getElementById('coins').textContent = coins;
+                    coinsList.splice(i, 1);
+                    continue;
+                }
+
+                if (coinsList[i].isOffScreen()) {
+                    coinsList.splice(i, 1);
+                }
+            }
+
+            updatePlayer();
+            drawPlayer();
+
+            requestAnimationFrame(gameLoop);
         }
 
-        function switchPlayer() {
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
-            playerElement.textContent = currentPlayer;
-            messageElement.textContent = `Player ${currentPlayer}'s turn`;
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            gameRunning = true;
+            score = 0;
+            coins = 0;
+            distance = 0;
+            gameSpeed = 5;
+            obstacles.length = 0;
+            coinsList.length = 0;
+            player.x = 1;
+            player.y = 400;
+            player.jumping = false;
+            gameLoop();
         }
 
-        function updateScore() {
-            scoreElement.textContent = scores[currentPlayer - 1];
-            ballsLeftElement.textContent = 15 - ballsPotted;
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalCoins').textContent = coins;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
         }
 
-        canvas.addEventListener('mousedown', (e) => {
-            if (!canShoot) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+        function restartGame() {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            startGame();
+        }
 
-            const dx = x - cueBall.x;
-            const dy = y - cueBall.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
 
-            if (dist < cueBall.radius + 10) {
-                isDragging = true;
-                dragStart = {x, y};
+            if (e.key === 'ArrowLeft' && player.x > 0) {
+                player.x--;
+            } else if (e.key === 'ArrowRight' && player.x < 2) {
+                player.x++;
+            } else if (e.key === ' ' && !player.jumping) {
+                e.preventDefault();
+                player.jumping = true;
+                player.jumpSpeed = -18;
             }
         });
 
-        canvas.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-
-            const rect = canvas.getBoundingClientRect();
-            aimLine.x = e.clientX - rect.left;
-            aimLine.y = e.clientY - rect.top;
-        });
-
-        canvas.addEventListener('mouseup', (e) => {
-            if (!isDragging || !canShoot) return;
-
-            const dx = aimLine.x - cueBall.x;
-            const dy = aimLine.y - cueBall.y;
-            const power = Math.sqrt(dx * dx + dy * dy) / 15;
-
-            cueBall.vx = -dx * power * 0.1;
-            cueBall.vy = -dy * power * 0.1;
-
-            isDragging = false;
-            canShoot = false;
-            powerFill.style.width = '0%';
-            
-            setTimeout(() => {
-                const ballsMoving = balls.some(ball => ball.active && ball.isMoving());
-                if (!ballsMoving) {
-                    const oldScore = scores[currentPlayer - 1];
-                    setTimeout(() => {
-                        if (scores[currentPlayer - 1] === oldScore && ballsPotted < 15) {
-                            switchPlayer();
-                        }
-                    }, 1000);
-                }
-            }, 1000);
-        });
-
-        function resetGame() {
-            currentPlayer = 1;
-            scores = [0, 0];
-            initBalls();
-            updateScore();
-            playerElement.textContent = currentPlayer;
-            messageElement.textContent = "Player 1's turn";
-            canShoot = true;
-            powerFill.style.width = '0%';
-        }
-
-        // Initialize and start
-        initBalls();
-        draw();
+        // Initial draw
+        drawBackground();
+        drawPlayer();
     </script>
 </body>
 </html>
